@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Lambda packages
+*.zip
+lambda-layer/
+lambda_orchestrator_package/
+lambda_worker_package/
+
+# Logs
+*.log
+*.log.*
+
+# Data files
+*.json
+*.csv
+*.md
+!README.md
+!ARCHITECTURE.md
+!*.md
+
+# Environment
+.env
+.venv
+env/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Scraper outputs
+rapsodia/
+deprecados/
+*.json
+*.csv
+
+# Keep these
+!requirements*.txt
+!scrapers/
+!lambda_*.py
+!rapsodia_scrapper.py
+
