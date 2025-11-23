@@ -25,9 +25,26 @@ jobs:
       
       - name: Create deployment package for Orchestrator
         run: |
+          # Verificar que los archivos existen
+          echo "Verificando archivos..."
+          ls -la lambda_orchestrator.py rapsodia_scrapper.py || echo "Archivos no encontrados"
+          
+          # Crear paquete
           mkdir -p package
-          cp lambda_orchestrator.py package/
-          cp rapsodia_scrapper.py package/
+          if [ -f lambda_orchestrator.py ]; then
+            cp lambda_orchestrator.py package/
+          else
+            echo "ERROR: lambda_orchestrator.py no encontrado"
+            exit 1
+          fi
+          
+          if [ -f rapsodia_scrapper.py ]; then
+            cp rapsodia_scrapper.py package/
+          else
+            echo "ERROR: rapsodia_scrapper.py no encontrado"
+            exit 1
+          fi
+          
           cd package
           zip -r ../lambda_orchestrator.zip . -q
           cd ..
@@ -67,10 +84,34 @@ jobs:
       
       - name: Create deployment package for Worker
         run: |
+          # Verificar que los archivos existen
+          echo "Verificando archivos..."
+          ls -la lambda_worker.py rapsodia_scrapper.py || echo "Archivos no encontrados"
+          ls -la scrapers/ || echo "Directorio scrapers no encontrado"
+          
+          # Crear paquete
           mkdir -p package
-          cp lambda_worker.py package/
-          cp rapsodia_scrapper.py package/
-          cp -r scrapers package/
+          if [ -f lambda_worker.py ]; then
+            cp lambda_worker.py package/
+          else
+            echo "ERROR: lambda_worker.py no encontrado"
+            exit 1
+          fi
+          
+          if [ -f rapsodia_scrapper.py ]; then
+            cp rapsodia_scrapper.py package/
+          else
+            echo "ERROR: rapsodia_scrapper.py no encontrado"
+            exit 1
+          fi
+          
+          if [ -d scrapers ]; then
+            cp -r scrapers package/
+          else
+            echo "ERROR: Directorio scrapers no encontrado"
+            exit 1
+          fi
+          
           cd package
           zip -r ../lambda_worker.zip . -q
           cd ..
