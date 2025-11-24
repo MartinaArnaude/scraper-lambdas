@@ -59,7 +59,7 @@ jobs:
           echo "📦 Tamaño: $ZIP_SIZE ($ZIP_SIZE_MB MB)"
       
       - name: Upload Layer Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: lambda-layer
           path: lambda-layer/layer.zip
