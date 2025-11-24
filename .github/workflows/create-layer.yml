@@ -1,0 +1,76 @@
+name: Create Lambda Layer
+
+on:
+  workflow_dispatch:  # Solo ejecución manual
+  push:
+    branches:
+      - main
+    paths:
+      - 'requirements_lambda.txt'
+
+jobs:
+  create-layer:
+    runs-on: ubuntu-latest  # Linux - perfecto para crear binarios Linux
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Create Lambda Layer
+        run: |
+          echo "📦 Creando Lambda Layer con binarios Linux..."
+          
+          # Crear estructura
+          mkdir -p lambda-layer/python
+          cd lambda-layer/python
+          
+          # Instalar dependencias (en Linux, los binarios serán para Linux)
+          pip install -r ../../requirements_lambda.txt -t . --no-cache-dir
+          
+          # Verificar pydantic-core
+          echo ""
+          echo "🔍 Verificando pydantic-core..."
+          if [ -f "pydantic_core/_pydantic_core*.so" ] || find pydantic_core -name "_pydantic_core*.so" | head -1 | grep -q .; then
+            echo "✅ Binario de pydantic-core encontrado"
+            find pydantic_core -name "_pydantic_core*.so" | head -3
+          else
+            echo "⚠️  No se encontró binario de pydantic-core"
+          fi
+          
+          cd ../..
+          
+          # Crear ZIP
+          cd lambda-layer
+          zip -r layer.zip python/ -q
+          cd ..
+          
+          # Verificar tamaño
+          ZIP_SIZE=$(du -h lambda-layer/layer.zip | cut -f1)
+          ZIP_SIZE_BYTES=$(stat -c%s lambda-layer/layer.zip)
+          ZIP_SIZE_MB=$((ZIP_SIZE_BYTES / 1024 / 1024))
+          
+          echo ""
+          echo "✅ Layer creado: lambda-layer/layer.zip"
+          echo "📦 Tamaño: $ZIP_SIZE ($ZIP_SIZE_MB MB)"
+      
+      - name: Upload Layer Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: lambda-layer
+          path: lambda-layer/layer.zip
+          retention-days: 7
+      
+      - name: Summary
+        run: |
+          echo "## ✅ Layer Creado" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "El layer está disponible como artifact." >> $GITHUB_STEP_SUMMARY
+          echo "Descárgalo desde la pestaña 'Artifacts' de este workflow." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Próximo paso:** Sube el layer a AWS Lambda" >> $GITHUB_STEP_SUMMARY
+
