@@ -44,47 +44,83 @@ jobs:
           
           cd ../..
           
-          # LIMPIEZA CRÍTICA: Eliminar archivos innecesarios para reducir tamaño
+          # LIMPIEZA AGRESIVA: Eliminar TODO lo innecesario
           echo ""
-          echo "🧹 Limpiando archivos innecesarios..."
+          echo "🧹 Limpieza agresiva de archivos innecesarios..."
           cd lambda-layer/python
           
-          # Eliminar archivos compilados (.pyc)
+          # Eliminar archivos compilados
           find . -type f -name "*.pyc" -delete
           find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+          find . -type f -name "*.pyo" -delete
           
-          # Eliminar metadatos y documentación (.dist-info, .egg-info)
+          # Eliminar TODOS los metadatos y documentación
           find . -type d -name "*.dist-info" -exec rm -rf {} + 2>/dev/null || true
           find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+          find . -type d -name "*.egg" -exec rm -rf {} + 2>/dev/null || true
           
-          # Eliminar carpetas de tests
+          # Eliminar TODAS las carpetas de tests
           find . -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
           find . -type d -name "test" -exec rm -rf {} + 2>/dev/null || true
           find . -type d -name "__tests__" -exec rm -rf {} + 2>/dev/null || true
+          find . -type d -name "testing" -exec rm -rf {} + 2>/dev/null || true
           
-          # Eliminar documentación
+          # Eliminar TODA la documentación
           find . -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true
           find . -type d -name "doc" -exec rm -rf {} + 2>/dev/null || true
-          
-          # Eliminar archivos de texto innecesarios
-          find . -type f -name "*.txt" ! -name "__init__.py" -delete 2>/dev/null || true
           find . -type f -name "*.md" -delete 2>/dev/null || true
           find . -type f -name "*.rst" -delete 2>/dev/null || true
+          find . -type f -name "*.txt" ! -path "*/site-packages/*" -delete 2>/dev/null || true
           find . -type f -name "LICENSE*" -delete 2>/dev/null || true
           find . -type f -name "COPYING*" -delete 2>/dev/null || true
+          find . -type f -name "CHANGELOG*" -delete 2>/dev/null || true
+          find . -type f -name "README*" -delete 2>/dev/null || true
           
-          # Eliminar herramientas de instalación (no necesarias en runtime)
+          # Eliminar herramientas de instalación
           rm -rf ./pip 2>/dev/null || true
           rm -rf ./setuptools 2>/dev/null || true
           rm -rf ./wheel 2>/dev/null || true
           rm -rf ./pkg_resources 2>/dev/null || true
+          rm -rf ./distutils 2>/dev/null || true
           
-          # Eliminar binarios innecesarios (mantener solo los .so necesarios)
+          # Eliminar binarios innecesarios
           find . -type f -name "*.exe" -delete 2>/dev/null || true
+          find . -type f -name "*.bat" -delete 2>/dev/null || true
           
-          # Eliminar archivos de ejemplo
+          # Eliminar ejemplos y demos
           find . -type d -name "examples" -exec rm -rf {} + 2>/dev/null || true
           find . -type d -name "example" -exec rm -rf {} + 2>/dev/null || true
+          find . -type d -name "demos" -exec rm -rf {} + 2>/dev/null || true
+          find . -type d -name "demo" -exec rm -rf {} + 2>/dev/null || true
+          
+          # Eliminar archivos de configuración innecesarios
+          find . -type f -name "setup.py" -delete 2>/dev/null || true
+          find . -type f -name "setup.cfg" -delete 2>/dev/null || true
+          find . -type f -name "pyproject.toml" -delete 2>/dev/null || true
+          find . -type f -name "MANIFEST.in" -delete 2>/dev/null || true
+          
+          # Limpieza específica de crawl4ai (si es muy pesado)
+          if [ -d "crawl4ai" ]; then
+            echo "   Limpiando crawl4ai específicamente..."
+            find ./crawl4ai -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
+            find ./crawl4ai -type f -name "*.md" -delete 2>/dev/null || true
+            find ./crawl4ai -type f -name "*.txt" -delete 2>/dev/null || true
+          fi
+          
+          # Limpieza específica de pydantic (mantener solo lo esencial)
+          if [ -d "pydantic" ]; then
+            echo "   Limpiando pydantic específicamente..."
+            find ./pydantic -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
+            find ./pydantic -type f -name "*.md" -delete 2>/dev/null || true
+          fi
+          
+          # Eliminar archivos de tipo innecesarios
+          find . -type f -name "*.html" -delete 2>/dev/null || true
+          find . -type f -name "*.css" -delete 2>/dev/null || true
+          find . -type f -name "*.js" -delete 2>/dev/null || true
+          
+          # Eliminar archivos vacíos y directorios vacíos
+          find . -type d -empty -delete 2>/dev/null || true
           
           cd ../..
           
@@ -96,10 +132,16 @@ jobs:
           echo "   Tamaño descomprimido: ${DU_SIZE_MB} MB (límite: 250 MB)"
           
           if [ $DU_SIZE_MB -gt 250 ]; then
-            echo "⚠️  ADVERTENCIA: Aún es mayor a 250MB después de limpieza"
-            echo "   Considera eliminar más dependencias o dividir en múltiples layers"
+            echo "⚠️  ADVERTENCIA: Aún es mayor a 250MB después de limpieza ($DU_SIZE_MB MB)"
+            echo "   Analizando qué ocupa más espacio..."
+            du -sh */ 2>/dev/null | sort -rh | head -10
+            echo ""
+            echo "   Opciones:"
+            echo "   1. Eliminar crawl4ai y usar solo requests + beautifulsoup4"
+            echo "   2. Dividir en múltiples layers"
+            echo "   3. Usar contenedores Docker en lugar de layers"
           else
-            echo "✅ Tamaño OK después de limpieza"
+            echo "✅ Tamaño OK después de limpieza ($DU_SIZE_MB MB < 250 MB)"
           fi
           
           # Crear ZIP
