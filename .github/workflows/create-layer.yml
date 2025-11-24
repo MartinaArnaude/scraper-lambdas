@@ -44,7 +44,67 @@ jobs:
           
           cd ../..
           
+          # LIMPIEZA CRÍTICA: Eliminar archivos innecesarios para reducir tamaño
+          echo ""
+          echo "🧹 Limpiando archivos innecesarios..."
+          cd lambda-layer/python
+          
+          # Eliminar archivos compilados (.pyc)
+          find . -type f -name "*.pyc" -delete
+          find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+          
+          # Eliminar metadatos y documentación (.dist-info, .egg-info)
+          find . -type d -name "*.dist-info" -exec rm -rf {} + 2>/dev/null || true
+          find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+          
+          # Eliminar carpetas de tests
+          find . -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
+          find . -type d -name "test" -exec rm -rf {} + 2>/dev/null || true
+          find . -type d -name "__tests__" -exec rm -rf {} + 2>/dev/null || true
+          
+          # Eliminar documentación
+          find . -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true
+          find . -type d -name "doc" -exec rm -rf {} + 2>/dev/null || true
+          
+          # Eliminar archivos de texto innecesarios
+          find . -type f -name "*.txt" ! -name "__init__.py" -delete 2>/dev/null || true
+          find . -type f -name "*.md" -delete 2>/dev/null || true
+          find . -type f -name "*.rst" -delete 2>/dev/null || true
+          find . -type f -name "LICENSE*" -delete 2>/dev/null || true
+          find . -type f -name "COPYING*" -delete 2>/dev/null || true
+          
+          # Eliminar herramientas de instalación (no necesarias en runtime)
+          rm -rf ./pip 2>/dev/null || true
+          rm -rf ./setuptools 2>/dev/null || true
+          rm -rf ./wheel 2>/dev/null || true
+          rm -rf ./pkg_resources 2>/dev/null || true
+          
+          # Eliminar binarios innecesarios (mantener solo los .so necesarios)
+          find . -type f -name "*.exe" -delete 2>/dev/null || true
+          
+          # Eliminar archivos de ejemplo
+          find . -type d -name "examples" -exec rm -rf {} + 2>/dev/null || true
+          find . -type d -name "example" -exec rm -rf {} + 2>/dev/null || true
+          
+          cd ../..
+          
+          # Verificar tamaño después de limpieza
+          echo ""
+          echo "📊 Verificando tamaño después de limpieza..."
+          DU_SIZE=$(du -sb lambda-layer/python | cut -f1)
+          DU_SIZE_MB=$((DU_SIZE / 1024 / 1024))
+          echo "   Tamaño descomprimido: ${DU_SIZE_MB} MB (límite: 250 MB)"
+          
+          if [ $DU_SIZE_MB -gt 250 ]; then
+            echo "⚠️  ADVERTENCIA: Aún es mayor a 250MB después de limpieza"
+            echo "   Considera eliminar más dependencias o dividir en múltiples layers"
+          else
+            echo "✅ Tamaño OK después de limpieza"
+          fi
+          
           # Crear ZIP
+          echo ""
+          echo "📦 Creando archivo zip..."
           cd lambda-layer
           zip -r layer.zip python/ -q
           cd ..
